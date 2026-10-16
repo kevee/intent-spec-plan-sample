@@ -99,3 +99,34 @@ test('completes a sign-up with the keyboard alone', async ({ page }) => {
   await expect(status).toBeFocused()
   await expectNoAxeViolations(page)
 })
+
+test('shows a returning volunteer the same confirmation', async ({ page }) => {
+  await openShift(page, 'Tree planting')
+  await expect(page.getByText('0 of 12 spots filled')).toBeVisible()
+
+  await page.getByLabel('Name').fill('Sam Okafor')
+  await page.getByLabel('Email').fill('sam.okafor@example.org')
+  await page.getByRole('button', { name: 'Sign up' }).click()
+  const firstTime = await page.getByRole('status').textContent()
+  expect(firstTime).toMatch(/^You're signed up for Tree planting on /)
+
+  // Back for a second go, with the address in different capitals, a stray
+  // space, and the name spelled differently. The page must look exactly as it
+  // did the first time: same words, same focus, nothing about "already".
+  await openShift(page, 'Tree planting')
+  await expect(page.getByText('1 of 12 spots filled')).toBeVisible()
+  await page.getByLabel('Name').fill('Samuel Okafor')
+  await page.getByLabel('Email').fill(' Sam.Okafor@Example.org ')
+  await page.getByRole('button', { name: 'Sign up' }).click()
+
+  const status = page.getByRole('status')
+  await expect(status).toHaveText(firstTime!)
+  await expect(status).toBeFocused()
+  await expect(page.getByText(/already/i)).toHaveCount(0)
+  await expectNoAxeViolations(page)
+
+  await page.goto('/')
+  await expect(
+    page.getByRole('listitem').filter({ hasText: 'Tree planting' })
+  ).toContainText('1 of 12 spots filled')
+})
