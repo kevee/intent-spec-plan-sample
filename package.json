@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "test": "jest --runInBand",
     "test:e2e": "playwright test",
-    "test:scripts": "node --test scripts/",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "db:migrate": "prisma migrate dev",
     "db:reset": "node scripts/reset-db.mjs",
     "db:seed": "prisma db seed",
