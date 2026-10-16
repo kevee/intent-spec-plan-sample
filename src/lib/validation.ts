@@ -4,8 +4,10 @@ const signupSchema = z.object({
   name: z.string().trim().min(1, { error: 'Enter your name.' }),
   email: z
     .string()
+    .trim()
     .min(1, { error: 'Enter your email address.' })
     .pipe(z.email({ error: 'Enter an email address like name@example.org.' }))
+    .transform((email) => email.toLowerCase())
 })
 
 export type SignupInput = z.infer<typeof signupSchema>
@@ -21,7 +23,9 @@ const fieldValue = (formData: FormData, field: string) => {
 }
 
 // Reads the sign-up form and returns either clean data or one message per
-// field. The email is kept exactly as typed.
+// field. The email comes back normalized (trimmed, lowercase), so two
+// addresses that differ only in capitals or surrounding spaces are stored as
+// one and the same person.
 export const parseSignup = (formData: FormData): ParsedSignup => {
   const result = signupSchema.safeParse({
     name: fieldValue(formData, 'name'),

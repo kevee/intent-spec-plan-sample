@@ -29,17 +29,35 @@ describe('shifts', () => {
     ])
   })
 
-  it('counts every sign-up row as a filled spot', async () => {
+  it('counts each person once', async () => {
     const shift = await createShift({ capacity: 10 })
     await createSignup(shift.id, 'Alex Chen', 'alex.chen@example.org')
-    await createSignup(shift.id, 'Alex Chen', 'alex.chen@example.org')
-    await createSignup(shift.id, 'Sam Okafor', 'Sam.Okafor@example.org')
     await createSignup(shift.id, 'Sam Okafor', 'sam.okafor@example.org')
 
-    expect(await spotsFilled(shift.id)).toBe(4)
+    expect(await spotsFilled(shift.id)).toBe(2)
     const [listed] = await listUpcomingShifts()
-    expect(listed.spotsFilled).toBe(4)
-    expect((await getShift(shift.id))?.spotsFilled).toBe(4)
+    expect(listed.spotsFilled).toBe(2)
+    expect((await getShift(shift.id))?.spotsFilled).toBe(2)
+  })
+
+  it('rejects a second row for the same person on the same shift', async () => {
+    const shift = await createShift({ capacity: 10 })
+    await createSignup(shift.id, 'Alex Chen', 'alex.chen@example.org')
+
+    await expect(
+      createSignup(shift.id, 'Alex Chen', 'alex.chen@example.org')
+    ).rejects.toMatchObject({ code: 'P2002' })
+    expect(await spotsFilled(shift.id)).toBe(1)
+  })
+
+  it('lets the same person sign up for another shift', async () => {
+    const first = await createShift()
+    const second = await createShift()
+    await createSignup(first.id)
+    await createSignup(second.id)
+
+    expect(await spotsFilled(first.id)).toBe(1)
+    expect(await spotsFilled(second.id)).toBe(1)
   })
 
   it('returns null for an unknown shift', async () => {

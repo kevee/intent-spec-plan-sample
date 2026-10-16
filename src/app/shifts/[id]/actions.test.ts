@@ -66,7 +66,11 @@ describe('signUp', () => {
       formData({ name: 'Sam Okafor', email: 'sam.okafor@example.org' })
     )
 
-    expect(state).toEqual({ status: 'full', message: 'This shift is full.' })
+    expect(state).toEqual({
+      status: 'full',
+      message:
+        'This shift is full. If you signed up earlier, your spot is still yours.'
+    })
     expect(await db.signup.count()).toBe(1)
   })
 
@@ -82,13 +86,105 @@ describe('signUp', () => {
     })
   })
 
-  it('stores a second sign-up from the same person as a second spot', async () => {
+  it('shows a returning person the same confirmation and stores nothing new', async () => {
     const shift = await createShift({ capacity: 10 })
     const form = formData({ name: 'Alex Chen', email: 'alex.chen@example.org' })
 
-    await signUp(shift.id, idle, form)
-    await signUp(shift.id, idle, form)
+    const first = await signUp(shift.id, idle, form)
+    const second = await signUp(shift.id, idle, form)
 
-    expect(await db.signup.count({ where: { shiftId: shift.id } })).toBe(2)
+    expect(first.status).toBe('signed-up')
+    expect(second).toEqual(first)
+    expect(await db.signup.count({ where: { shiftId: shift.id } })).toBe(1)
+  })
+
+  it('treats capitals and surrounding spaces as the same person', async () => {
+    const shift = await createShift({ capacity: 10 })
+
+    const first = await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Sam Okafor', email: 'sam.okafor@example.org' })
+    )
+    const second = await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Sam Okafor', email: '  Sam.Okafor@Example.org ' })
+    )
+
+    expect(second).toEqual(first)
+    expect(
+      await db.signup.findMany({ where: { shiftId: shift.id } })
+    ).toMatchObject([{ email: 'sam.okafor@example.org' }])
+  })
+
+  it('keeps the first name when a resubmission spells it differently', async () => {
+    const shift = await createShift({ capacity: 10 })
+
+    await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Alex Chen', email: 'alex.chen@example.org' })
+    )
+    const second = await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Alexandra Chen', email: 'alex.chen@example.org' })
+    )
+
+    expect(second.status).toBe('signed-up')
+    expect(
+      await db.signup.findMany({ where: { shiftId: shift.id } })
+    ).toMatchObject([{ name: 'Alex Chen' }])
+  })
+
+  it('leaves one sign-up when the same person submits twice at once', async () => {
+    const shift = await createShift({ capacity: 10 })
+    const form = formData({ name: 'Alex Chen', email: 'alex.chen@example.org' })
+
+    const [first, second] = await Promise.all([
+      signUp(shift.id, idle, form),
+      signUp(shift.id, idle, form)
+    ])
+
+    expect(first.status).toBe('signed-up')
+    expect(second).toEqual(first)
+    expect(await db.signup.count({ where: { shiftId: shift.id } })).toBe(1)
+  })
+
+  it('shows everyone the same message when the shift is full', async () => {
+    const shift = await createShift({ capacity: 1 })
+    await createSignup(shift.id, 'Alex Chen', 'alex.chen@example.org')
+
+    const holder = await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Alex Chen', email: 'alex.chen@example.org' })
+    )
+    const newcomer = await signUp(
+      shift.id,
+      idle,
+      formData({ name: 'Sam Okafor', email: 'sam.okafor@example.org' })
+    )
+
+    expect(holder.status).toBe('full')
+    expect(newcomer).toEqual(holder)
+    expect(await db.signup.count({ where: { shiftId: shift.id } })).toBe(1)
+  })
+
+  it('still throws when the insert fails for another reason', async () => {
+    const shift = await createShift({ capacity: 10 })
+    jest
+      .spyOn(db.signup, 'create')
+      .mockRejectedValueOnce(new Error('database is locked'))
+
+    await expect(
+      signUp(
+        shift.id,
+        idle,
+        formData({ name: 'Alex Chen', email: 'alex.chen@example.org' })
+      )
+    ).rejects.toThrow('database is locked')
+    expect(await db.signup.count({ where: { shiftId: shift.id } })).toBe(0)
   })
 })
