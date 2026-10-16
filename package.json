@@ -1,0 +1,55 @@
+{
+  "name": "intent-spec-plan-sample",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fairview Volunteers: a small Next.js app that teaches an intent → spec → plan workflow with Claude Code.",
+  "license": "MIT",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "test": "jest --runInBand",
+    "test:e2e": "playwright test",
+    "test:scripts": "node --test scripts/",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "node scripts/reset-db.mjs",
+    "db:seed": "prisma db seed",
+    "check:plan": "node scripts/check-plan.mjs",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "better-sqlite3": "12.11.1",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/better-sqlite3": "9.6.0",
+    "@types/jest": "30.0.0",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.13.0",
+    "eslint-config-next": "16.4.2",
+    "eslint-config-prettier": "10.1.8",
+    "jest": "30.5.2",
+    "prettier": "3.9.10",
+    "prisma": "7.10.1",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

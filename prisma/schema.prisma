@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  title     String
+  location  String
+  startsAt  DateTime
+  endsAt    DateTime
+  capacity  Int
+  signups   Signup[]
+  createdAt DateTime @default(now())
+}
+
+model Signup {
+  id        String   @id @default(cuid())
+  shiftId   String
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([shiftId])
+}
