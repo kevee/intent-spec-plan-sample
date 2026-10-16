@@ -75,9 +75,7 @@ const main = async () => {
     }
   })
 
-  // Eight rows from six people. Jordan Lee signed up twice four minutes
-  // apart, and Sam Okafor signed up twice with different capitals a day
-  // apart. Both pairs count as two spots today.
+  // Six people, one row each. The list reads "6 of 10 spots filled".
   await db.signup.createMany({
     data: [
       {
@@ -91,24 +89,14 @@ const main = async () => {
         createdAt: minutesAgo(now, 6 * 24 * 60 + 30)
       },
       {
-        name: 'Jordan Lee',
-        email: 'jordan.lee@example.org',
-        createdAt: minutesAgo(now, 6 * 24 * 60 + 26)
-      },
-      {
         name: 'Sam Okafor',
-        email: 'Sam.Okafor@example.org',
+        email: 'sam.okafor@example.org',
         createdAt: minutesAgo(now, 5 * 24 * 60)
       },
       {
         name: 'Maria Gomez',
         email: 'maria.gomez@example.org',
         createdAt: minutesAgo(now, 4 * 24 * 60 + 120)
-      },
-      {
-        name: 'Sam Okafor',
-        email: 'sam.okafor@example.org',
-        createdAt: minutesAgo(now, 4 * 24 * 60)
       },
       {
         name: 'Tasha Williams',

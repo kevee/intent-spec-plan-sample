@@ -19,11 +19,33 @@ describe('parseSignup', () => {
     expect(result.ok && result.data.name).toBe('Alex Chen')
   })
 
-  it('keeps the email exactly as typed', () => {
+  it('lowercases the email', () => {
     const result = parseSignup(
-      formData({ name: 'Sam Okafor', email: 'Sam.Okafor@example.org' })
+      formData({ name: 'Sam Okafor', email: 'Sam.Okafor@Example.ORG' })
     )
-    expect(result.ok && result.data.email).toBe('Sam.Okafor@example.org')
+    expect(result.ok && result.data.email).toBe('sam.okafor@example.org')
+  })
+
+  it('trims spaces around the email', () => {
+    const result = parseSignup(
+      formData({ name: 'Sam Okafor', email: '  sam.okafor@example.org ' })
+    )
+    expect(result.ok && result.data.email).toBe('sam.okafor@example.org')
+  })
+
+  it('trims and lowercases together', () => {
+    const result = parseSignup(
+      formData({ name: 'Sam Okafor', email: ' Sam.Okafor@example.org ' })
+    )
+    expect(result.ok && result.data.email).toBe('sam.okafor@example.org')
+  })
+
+  it('treats an email that is only spaces as empty', () => {
+    const result = parseSignup(formData({ name: 'Sam Okafor', email: '   ' }))
+    expect(result).toEqual({
+      ok: false,
+      errors: { email: 'Enter your email address.' }
+    })
   })
 
   it('asks for both fields when they are empty', () => {
@@ -39,11 +61,12 @@ describe('parseSignup', () => {
     expect(result.ok).toBe(false)
   })
 
-  it('rejects an address that is not an email', () => {
-    const result = parseSignup(formData({ name: 'Alex Chen', email: 'alex' }))
-    expect(result).toEqual({
-      ok: false,
-      errors: { email: 'Enter an email address like name@example.org.' }
-    })
+  it('rejects an address that is not an email, whatever its case', () => {
+    for (const email of ['alex', ' ALEX ']) {
+      expect(parseSignup(formData({ name: 'Alex Chen', email }))).toEqual({
+        ok: false,
+        errors: { email: 'Enter an email address like name@example.org.' }
+      })
+    }
   })
 })

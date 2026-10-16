@@ -28,4 +28,5 @@ model Signup {
   createdAt DateTime @default(now())
 
   @@index([shiftId])
+  @@unique([shiftId, email])
 }

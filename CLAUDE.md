@@ -35,8 +35,10 @@ Requires Node 22 (`.nvmrc`) and pnpm (pinned in `packageManager`; run `corepack 
 ## Architecture
 
 - **Next.js App Router ---** `src/app/page.tsx` lists upcoming shifts; `src/app/shifts/[id]/page.tsx` shows one shift and its sign-up form.
-- **Server actions ---** `signUp` in `src/app/shifts/[id]/actions.ts` validates with `parseSignup` (`src/lib/validation.ts`), checks capacity, and writes the sign-up. The form (`sign-up-form.tsx`) uses `useActionState`.
-- **Data ---** Prisma on SQLite. `prisma/schema.prisma` has two models, `Shift` and `Signup`. Queries live in `src/lib/shifts.ts`; the client singleton is `src/lib/db.ts`. The generated client lands in `src/generated/prisma/` (git-ignored, rebuilt by `prisma generate` on install) and is imported from `@/generated/prisma/client`.
+- **Server actions ---** `signUp` in `src/app/shifts/[id]/actions.ts` validates with `parseSignup` (`src/lib/validation.ts`), which also normalizes the email (trimmed, lowercase). Then it checks, in this order: the shift is full (everyone gets the same `FULL_MESSAGE`), the person already holds a spot (they get the same confirmation a first sign-up gets), and only then does it insert. The form (`sign-up-form.tsx`) uses `useActionState`.
+
+  **Note:** nothing the action returns may say "already signed up". That would tell anyone typing an address whether it's on a list. The order of checks above is what keeps a full shift from becoming the same oracle.
+- **Data ---** Prisma on SQLite. `prisma/schema.prisma` has two models, `Shift` and `Signup`. A person holds at most one spot per shift: the unique index on `Signup (shiftId, email)` guarantees it, and the action treats Prisma's `P2002` on that index as "already signed up" (and rethrows anything else). Queries live in `src/lib/shifts.ts`; the client singleton is `src/lib/db.ts`. The generated client lands in `src/generated/prisma/` (git-ignored, rebuilt by `prisma generate` on install) and is imported from `@/generated/prisma/client`.
 - **Time ---** every date renders in `TIME_ZONE` (`src/lib/format.ts`) through `formatShiftTime` (a date and time range, for the shift list and page) or `formatShiftStart` (a date and start time, for the confirmation). Don't format dates anywhere else, or tests start depending on the machine's time zone.
 
 ### Shared components
@@ -73,6 +75,8 @@ None of the three skills commits. Whatever is uncommitted in the story folder go
 ## Database
 
 Migrations follow `docs/database.md`. The short version: add, don't rename or drop in the same release, and generate with `pnpm db:migrate --create-only` when the SQL needs hand edits. A schema change is always a concern in the spec.
+
+**Note:** `pnpm db:migrate --create-only` is `prisma migrate dev`, which refuses to run from a non-interactive session like this one. Generate the SQL with `pnpm exec prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script` and put it in a new `prisma/migrations/<timestamp>_<name>/migration.sql` yourself. A migration that changes or deletes rows follows "Migrations that delete rows" in `docs/database.md`: back the file up first.
 
 **Note:** `pnpm db:reset` runs `scripts/reset-db.mjs` (delete the file, `prisma migrate deploy`, `prisma db seed`), not `prisma migrate reset`. In Prisma 7, `migrate reset` no longer seeds, and it refuses to run from an AI coding agent's session without a consent variable. The script does the same job for any `file:` `DATABASE_URL`, so use it for `before`/`after` copies of the database too.
 

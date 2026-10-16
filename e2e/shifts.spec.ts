@@ -22,14 +22,14 @@ test('lists the upcoming shifts and opens one', async ({ page }) => {
     hasText: 'Riverside park clean-up'
   })
   await expect(riverside).toContainText('Riverside Park')
-  await expect(riverside).toContainText('8 of 10 spots filled')
+  await expect(riverside).toContainText('6 of 10 spots filled')
   await expectNoAxeViolations(page)
 
   await riverside.getByRole('link', { name: 'Riverside park clean-up' }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Riverside park clean-up'
   )
-  await expect(page.getByText('8 of 10 spots filled')).toBeVisible()
+  await expect(page.getByText('6 of 10 spots filled')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Sign up' })).toBeVisible()
   await expectNoAxeViolations(page)
 })
@@ -46,7 +46,9 @@ test('says in text when a shift is full', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Food bank sorting'
   )
-  await expect(page.getByRole('status')).toHaveText('This shift is full.')
+  await expect(page.getByRole('status')).toHaveText(
+    'This shift is full. If you signed up earlier, your spot is still yours.'
+  )
   await expect(page.getByRole('button', { name: 'Sign up' })).toHaveCount(0)
   await expectNoAxeViolations(page)
 })

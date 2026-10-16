@@ -44,7 +44,9 @@ export const getShift = async (id: string): Promise<ShiftSummary | null> => {
   return shift ? toSummary(shift) : null
 }
 
-// One row per sign-up. The capacity check in the sign-up action uses this.
+// One row per person: the unique index on (shiftId, email) means a row is a
+// person, so counting rows counts people. The capacity check in the sign-up
+// action uses this.
 export const spotsFilled = (shiftId: string) =>
   db.signup.count({ where: { shiftId } })
 
@@ -52,5 +54,8 @@ export const isFull = (shift: { capacity: number; spotsFilled: number }) =>
   shift.spotsFilled >= shift.capacity
 
 // Shown in place of the form, and returned by the sign-up action when the
-// shift fills while someone has the form open.
-export const FULL_MESSAGE = 'This shift is full.'
+// shift fills while someone has the form open. Everyone sees the same words,
+// whether or not they already hold a spot, so the page never reveals who is
+// on the list.
+export const FULL_MESSAGE =
+  'This shift is full. If you signed up earlier, your spot is still yours.'
